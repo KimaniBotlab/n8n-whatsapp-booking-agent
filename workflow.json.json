@@ -16,7 +16,7 @@
       ],
       "id": "45d140ba-586e-403e-9625-b179a6c3b1dd",
       "typeVersion": 2.1,
-      "webhookId": "8595e250-9766-4c0a-b824-f0f60b2bb901",
+      "webhookId": "placeholder-id",
       "notes": "Receives WhatsApp via free WhatsApp Web API or Twilio sandbox"
     },
     {
@@ -119,7 +119,7 @@
           "__rl": true,
           "value": "your-email@gmail.com",
           "mode": "list",
-          "cachedResultName": "your-email@gmail.com
+          "cachedResultName": "your-email@gmail.com"
         },
         "start": "={{ $fromAI('start','date and time for when the event should end') }}",
         "end": "={{ $fromAI('End','date and time for when the event should end') }}",
@@ -174,7 +174,7 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit?gid=0#gid=0",
+          "value": "your-sheet-url-goes-here",
           "mode": "url"
         },
         "sheetName": {
@@ -182,7 +182,7 @@
           "value": "gid=0",
           "mode": "list",
           "cachedResultName": "Appointments",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit#gid=0"
+          "cachedResultUrl": "your-sheet-url-goes-here"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -295,7 +295,7 @@
       "parameters": {
         "documentId": {
           "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit?gid=0#gid=0",
+          "value": "your-sheet-url-goes-here",
           "mode": "url"
         },
         "sheetName": {
@@ -303,7 +303,7 @@
           "value": "gid=0",
           "mode": "list",
           "cachedResultName": "Appointments",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit#gid=0"
+          "cachedResultUrl": "your-sheet-url-goes-here"
         },
         "options": {
           "dataLocationOnSheet": {
@@ -334,7 +334,7 @@
         "operation": "update",
         "documentId": {
           "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit?gid=0#gid=0",
+          "value": "your-sheet-id-goes-here",
           "mode": "url"
         },
         "sheetName": {
@@ -342,7 +342,7 @@
           "value": "gid=0",
           "mode": "list",
           "cachedResultName": "Appointments",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit#gid=0"
+          "cachedResultUrl": "your-sheet-id-goes-here"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -466,7 +466,7 @@
         "subject": "={{ $fromAI('subject','the email subjectline that just is [New Booking] + Booking date and time converted to the user timezone that he mentioned earlier') }}",
         "message": "={{ $fromAI('body','the email body that contains the message that the booking of the user was confirmed along with booking date, email, name, timezone, what user wants to discuss during appointment') }}",
         "options": {
-          "bccList": "jkimani6433@gmail.com"
+          "bccList": "your-email@gmail.com"
         }
       },
       "type": "n8n-nodes-base.gmailTool",
