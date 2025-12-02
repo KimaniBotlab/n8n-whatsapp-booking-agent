@@ -1,0 +1,631 @@
+{
+  "name": "Appointment Booking",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-booking",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook - WhatsApp Incoming",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        -64,
+        192
+      ],
+      "id": "45d140ba-586e-403e-9625-b179a6c3b1dd",
+      "typeVersion": 2.1,
+      "webhookId": "8595e250-9766-4c0a-b824-f0f60b2bb901",
+      "notes": "Receives WhatsApp via free WhatsApp Web API or Twilio sandbox"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n    <Message>{{ $json.output }}</Message>\n</Response>",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "name": "Respond Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1056,
+        192
+      ],
+      "id": "650c7167-199a-4965-a96f-229afb7672b4",
+      "typeVersion": 1.4
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.Body }}",
+        "options": {
+          "systemMessage": "=You are a helpful assistant\nYou have access to these tools:\n\n1)A Google Calendar tool that allows you to create ,reschedule , and delete events in a calendar.\n\n2)Several Google Sheet tools :\n - 'Google Sheet - Add Row':allows you to add new rows to a Google Sheet\n - 'Google Sheet - Update Row': allows you to update rows in a Google Sheet \n - 'Google Sheets - Read' : allows you to read content of google sheet\n\n3)Gmail - Send confirmation User : allows you to send a confirmation email to the user after the booking is confirmed.\n\nThe current timestamp is: {{ $now.toISO() }}. Today is {{ $now.toFormat('DDDD') }}. You must use this year ({{ $now.year }}) for all bookings.\n\nYour Task:\n1) Start by asking the user:\n\"Would you like to book an appointment?\"\nIf the user responds with yes ,begin collecting their contact information.\n\nYou must always collect the contact information in the following strict order:\n\n-First: Email address \n  -This will be used as the unique identifier to match the row in the Google Sheet.\n  -After receiving the email address, immediately check if a row with this email already exists using \"Google Sheet - Read\".\n  -If found, use \"Google Sheet - Update Row\" to update the existing row.\n  -If not found, use \"Google Sheet - Add Row\" to create a new one with the email.\n-Then: Full name\n-Then:Phone number\n-Then:Location or time zone\n\n! Only ask for one piece of information at a time.\n! Wait for the user's reply before asking the next question.\n! After every response, immediately update Google sheet using \"Google Sheet - Update Row\" ,matched by the email address.\n\n2)You must always store all user information (email address ,name ,phone number ,and location/time zone) in a Google Sheet.\n\n2.5)After collecting the location /time zone ,ask the user:\n \"What wouldyou like to discuss during your appointment?\"\n\n - Wait for the user's response.\n -Then immediately update the same row in the Google Sheet using \"Google Sheet - Update Row\" ,matched by the email address.\n -Save the user's response as the appointment topic or notes.\n\n3) Once the user's contact information and discussion topic have been collected, you must offer 5 available time slots for booking .\n\n  - Use the assistant's local time zone (Kenyan Time) to determine availability\n\n-The available office hours are :\n  - Monday to Saturday\n  - Morning block: 08:00 - 12:00\n  - Afternoon block: 13:00 - 17:00\n  -(Never offer times between 12:00 and 13:00)\n- Do not offer any time slots that fall outside of these hours in Kenyan Time ,even if they appear to be in the user's local time zone.\n\n-When a user requests a time range (e.g , \"afternoon\"),\nfollow this logic:\n 1) Understand the time range based on the user's time zone.\n 2) Convert that time range into Kenyan time.\n 3) Only offer time slots that match both the user's intent and fall within the Kenyan office hours.\n\n- You must check that a full 60-minute block is available:\n  -The start and end time must not conflict with any existing calendar event.\n  -The time slot must begin at least 24 hours in the future.\n\n- Always offer the next 5 available 60-minute time slots that meet the above criteria.\n\n- Only display the next 5 available slots in the user's time zone.\n   - Do not mention Kenyan time anywhere in your response\n    - Do not include time conversions in parentheses.\n\n- Present the time slots in a simple, friendly format like:\n   \"Here are the next available time slots in your local time zone:\n          - Thursday at 10:00 AM\n          - Friday at 11:30AM\n             ...\"\n\n- If no available slots match the user's requested period (e.g, afternoon), politely inform the user and offer the next closest options.\n\n- Never mention unavailable or already booked time slots. Only show the free ones. Do not include notes, reminders ,or explanations about other bookings.\n\n ! You must not manually calculate or estimate time zone offsets.\n -Use the Google Calendar tool to convert and format times.\n\n4) When the user confirms a preferred date and time , you must :\n   -Create an event in the Google Calendar at the selected time .\n   -Appointments should always be scheduled for 60 minutes unless the user specifies otherwise. \n   -Do not create a new row in the Google Sheet.\n   -Instead, use the tool \"Google Sheet - Update Row\" to update the existing row corresponding to the user(matched by email address and add the selected date and time as the confirmed appointment.\n\n   -The appointment time saved in the Google Sheet must always be in the assistant's local time(Kenyan time) - never in the user's time zone .\n\n   - After the booking is confirmed, send a confirmation email to the user using the \"Gmail - send confirmation User\" tool.\n\n   -The email must include:\n      -The confirmed appointment date and time (in the user's local time zone)\n      -The user's name and topic of discussion\n      -A short, friendly message confirming the booking\nOnly send the confirmation email after the calendar event has been created  and all data has been stored in the Google Sheet.\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        416,
+        192
+      ],
+      "id": "77e099b9-0798-4504-b293-a9c464276b1b",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "id": "fd921000-2e5d-442e-bf2f-ca410ce47ff6",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "ktlSQpCKHFxPcRcY",
+          "name": "Google Gemini(PaLM) Api rag"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.WaId }}",
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        400
+      ],
+      "id": "3ddd93d1-0f18-4719-bce3-7a2f9bc93e7e",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "jkimani6433@gmail.com",
+          "mode": "list",
+          "cachedResultName": "jkimani6433@gmail.com"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        400
+      ],
+      "id": "fc9c1331-8e49-4ee1-a0b2-2446217381fd",
+      "name": "Calender Read",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "hOxHunoRapMKbWOY",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "jkimani6433@gmail.com",
+          "mode": "list",
+          "cachedResultName": "jkimani6433@gmail.com"
+        },
+        "start": "={{ $fromAI('start','date and time for when the event should end') }}",
+        "end": "={{ $fromAI('End','date and time for when the event should end') }}",
+        "additionalFields": {
+          "summary": "={{ $fromAI('title','title of the event') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        400,
+        400
+      ],
+      "id": "9af47312-445a-43e5-b484-cab3b4c2e683",
+      "name": "Calendar Create",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "hOxHunoRapMKbWOY",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "jkimani6433@gmail.com",
+          "mode": "list",
+          "cachedResultName": "jkimani6433@gmail.com"
+        },
+        "eventId": "={{ $fromAI('id','the id of the event') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        400
+      ],
+      "id": "4a3fda5e-093f-45ec-a650-3abc0a9d6623",
+      "name": "Calendar Delete",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "hOxHunoRapMKbWOY",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $fromAI('Email','the email address that the user tells you') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Appointment Date",
+              "displayName": "Appointment Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": " Booking Status",
+              "displayName": " Booking Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": " Time Zone",
+              "displayName": " Time Zone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Intake Form ",
+              "displayName": "Intake Form ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Reminder Sent",
+              "displayName": "Reminder Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        848,
+        400
+      ],
+      "id": "06b195c3-1c56-4d94-92cb-018289261653",
+      "name": "Google Sheets-Add Rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pZpDe26StIklAhiJ",
+          "name": "jkimani"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit#gid=0"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "detectAutomatically",
+              "readRowsUntil": "firstEmptyRow"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        400
+      ],
+      "id": "f479b936-c637-4997-9c3b-c24926284e14",
+      "name": "Google Sheet - Read",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pZpDe26StIklAhiJ",
+          "name": "jkimani"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Appointments",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14FBMjhiAW5_vGBT9BO48zTQEtv_7manuNx7doEA0VGk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $fromAI('Email','the email address that the user tells you') }}",
+            "Appointment Date": "={{ $fromAI('date','the appointment date and time converted to Kenyan Timezone that the user confirmed as his appointment') }}",
+            " Booking Status": "={{ $fromAI('status','the status of the appointment which is either confirmed or cancelled ') }}",
+            " Time Zone": "={{ $fromAI('time_zone','the time zone and location that the user tells you') }}",
+            "Name": "={{ $fromAI('name','the name of the user') }}",
+            "Phone": "={{ $fromAI('phone','the phonenumber that the user tells you. Always save the phone number with the country code that is associated with the time zone the user mentioned') }}",
+            "Intake Form ": "={{ $fromAI('intake_form','specific to pics or issued the user likes to discuss during the appointment') }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": "Appointment Date",
+              "displayName": "Appointment Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": " Booking Status",
+              "displayName": " Booking Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": " Time Zone",
+              "displayName": " Time Zone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Phone",
+              "displayName": "Phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Intake Form ",
+              "displayName": "Intake Form ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Reminder Sent",
+              "displayName": "Reminder Sent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        1008,
+        416
+      ],
+      "id": "e5aae2ee-5d6c-4736-8e02-90025216b9ce",
+      "name": "Google Sheets-Update Rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "pZpDe26StIklAhiJ",
+          "name": "jkimani"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI('Email','the email address that the user gave you earlier') }}",
+        "subject": "={{ $fromAI('subject','the email subjectline that just is [New Booking] + Booking date and time converted to the user timezone that he mentioned earlier') }}",
+        "message": "={{ $fromAI('body','the email body that contains the message that the booking of the user was confirmed along with booking date, email, name, timezone, what user wants to discuss during appointment') }}",
+        "options": {
+          "bccList": "jkimani6433@gmail.com"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        1168,
+        400
+      ],
+      "id": "70dc7b11-8b31-4ca9-bb75-0f948ee21bef",
+      "name": "Send message",
+      "webhookId": "0aa35916-357a-499a-954d-0fe7fd957dac",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "gXtqpcYkIrOLKMXf",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - WhatsApp Incoming": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Success": {
+      "main": [
+        []
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calender Read": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar Create": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar Delete": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets-Add Rows": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheet - Read": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets-Update Rows": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "0fb318a9-79c6-4c82-9fbe-71a468034ada",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1a034bc3e5088bc6d45b7a543282ed15c25d893d41259419b5ae92c6c66a9326"
+  },
+  "id": "RhoZhAfzrrAg7W1A",
+  "tags": []
+}
